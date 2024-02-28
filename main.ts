@@ -7,12 +7,10 @@ export default class SyncViaGithub extends Plugin {
 	ribbonIcon: HTMLElement;
 	git: SimpleGit;
 
-
 	onGithubIconClick = async (event: MouseEvent) => {
 		try {
 			await this.git.status();
 			await this.configureRemote();
-			console.log(await this.git.listRemote())
 			try {
 				await this.git.fetch();
 			} catch (e) {
@@ -58,9 +56,6 @@ export default class SyncViaGithub extends Plugin {
 		this.git = simpleGit({
 			baseDir: (this.app.vault.adapter as FileSystemAdapter).getBasePath(),
 			binary: 'git',
-			config: [
-				`http.extraHeader=Authorization: Bearer ${this.settings.accessToken}`
-			],
 			maxConcurrentProcesses: 5,
 			trimmed: false,
 		});
@@ -69,7 +64,6 @@ export default class SyncViaGithub extends Plugin {
 	async configureRemote() {
 		await this.git.removeRemote('origin');
 		await this.git.addRemote('origin', this.settings.remote);
-		console.log(this.settings.remote);
 	}
 
 	async pull() {
