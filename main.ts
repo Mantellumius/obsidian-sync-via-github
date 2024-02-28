@@ -5,6 +5,7 @@ import { SampleSettingTab, SyncViaGithubSettings } from 'src/settings';
 export default class SyncViaGithub extends Plugin {
     settings: SyncViaGithubSettings;
     ribbonIcon: HTMLElement;
+    statusBar: HTMLElement;
     git: SimpleGit;
 
     onGithubIconClick = async (event: MouseEvent) => {
@@ -30,14 +31,13 @@ export default class SyncViaGithub extends Plugin {
 
         this.addSettingTab(new SampleSettingTab(this.app, this));
         this.ribbonIcon = this.addRibbonIcon('github', 'Github Sync', this.onGithubIconClick);
-        this.registerInterval(window.setInterval(async () => {
+        this.statusBar = this.addStatusBarItem();
+        const updateStatusBar = async () => {
             const status = await this.git.fetch().status();
-            this.ribbonIcon.dataset.commitsBehind = status.behind.toString();
-            if (status.behind > 0)
-                this.ribbonIcon.addClass('not-synced');
-            else
-                this.ribbonIcon.removeClass('not-synced');
-        }, 60 * 1000));
+            this.statusBar.setText(`Changes: ${status.not_added.length} ${status.behind > 0 ? 'Commits behind' + status.behind : ''}`);
+            window.setTimeout(updateStatusBar.bind(this), 1000 * 60);
+        };
+        updateStatusBar();
     }
 
     onunload() {
