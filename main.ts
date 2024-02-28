@@ -25,24 +25,23 @@ export default class SyncViaGithub extends Plugin {
         }
     };
 
+    updateStatusBar = async () => {
+        const status = await this.git.fetch().status();
+        this.statusBar.setText(`Changes: ${status.not_added.length} ${status.behind > 0 ? 'Commits behind' + status.behind : ''}`);
+    };
+
     async onload() {
         await this.loadSettings();
-        await this.initGit();
-
+        this.initGit();
+        await this.updateStatusBar();
+        
         this.addSettingTab(new SampleSettingTab(this.app, this));
         this.ribbonIcon = this.addRibbonIcon('github', 'Github Sync', this.onGithubIconClick);
         this.statusBar = this.addStatusBarItem();
-        const updateStatusBar = async () => {
-            const status = await this.git.fetch().status();
-            this.statusBar.setText(`Changes: ${status.not_added.length} ${status.behind > 0 ? 'Commits behind' + status.behind : ''}`);
-            window.setTimeout(updateStatusBar.bind(this), 1000 * 60);
-        };
-        updateStatusBar();
+        this.registerInterval(window.setInterval(this.updateStatusBar, 1000 * 60));
     }
 
-    onunload() {
-
-    }
+    onunload() { }
 
     async loadSettings() {
         this.settings = Object.assign(new SyncViaGithubSettings(), await this.loadData());
@@ -52,7 +51,7 @@ export default class SyncViaGithub extends Plugin {
         return this.saveData(this.settings);
     }
 
-    async initGit() {
+    initGit() {
         this.git = simpleGit({
             baseDir: (this.app.vault.adapter as FileSystemAdapter).getBasePath(),
             binary: 'git',
