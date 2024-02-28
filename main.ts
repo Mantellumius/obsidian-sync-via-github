@@ -1,17 +1,22 @@
-import { Notice, Plugin } from 'obsidian';
+import { FileSystemAdapter, Plugin } from 'obsidian';
+import simpleGit, { SimpleGit } from 'simple-git';
 import { SampleSettingTab, SyncViaGithubSettings } from 'src/settings';
 
 export default class SyncViaGithub extends Plugin {
 	settings: SyncViaGithubSettings;
 	ribbonIcon: HTMLElement;
+	git: SimpleGit;
+
+
+	onGithubIconClick = async (event: MouseEvent) => {
+		console.log(await this.git.branch());
+	}
 
 	async onload() {
 		await this.loadSettings();
 		this.addSettingTab(new SampleSettingTab(this.app, this));
-		this.ribbonIcon = this.addRibbonIcon('github', 'Github Sync', (evt: MouseEvent) => {
-			new Notice('Hello world');
-		});
-
+		this.initGit();
+		this.ribbonIcon = this.addRibbonIcon('github', 'Github Sync', this.onGithubIconClick);
 		this.registerInterval(window.setInterval(() => {
 			const commitsBehind = 1;
 			this.ribbonIcon.dataset.commitsBehind = commitsBehind.toString();
@@ -32,5 +37,17 @@ export default class SyncViaGithub extends Plugin {
 
 	saveSettings() {
 		return this.saveData(this.settings);
+	}
+
+	initGit() {
+		this.git = simpleGit({
+			baseDir: (this.app.vault.adapter as FileSystemAdapter).getBasePath(),
+			binary: 'git',
+			config: [
+				`http.extraHeader=Authorization: Bearer ${this.settings.accessToken}`
+			],
+			maxConcurrentProcesses: 5,
+			trimmed: false,
+		});
 	}
 }
