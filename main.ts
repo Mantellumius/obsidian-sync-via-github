@@ -30,10 +30,10 @@ export default class SyncViaGithub extends Plugin {
 
         this.addSettingTab(new SampleSettingTab(this.app, this));
         this.ribbonIcon = this.addRibbonIcon('github', 'Github Sync', this.onGithubIconClick);
-        this.registerInterval(window.setInterval(() => {
-            const commitsBehind = 1;
-            this.ribbonIcon.dataset.commitsBehind = commitsBehind.toString();
-            if (commitsBehind > 0)
+        this.registerInterval(window.setInterval(async () => {
+            const status = await this.git.fetch().status();
+            this.ribbonIcon.dataset.commitsBehind = status.behind.toString();
+            if (status.behind > 0)
                 this.ribbonIcon.addClass('not-synced');
             else
                 this.ribbonIcon.removeClass('not-synced');
