@@ -10,15 +10,17 @@ export default class SyncViaGithub extends Plugin {
 
     onGithubIconClick = async (event: MouseEvent) => {
         try {
-            await this.git.status();
+            const status = await this.getStatus();
             await this.configureRemote();
-            try {
-                await this.git.fetch();
-            } catch (e) {
-                new Notice(e + '\nGitHub Sync: Invalid remote URL. Username, PAT, or Repo URL might be incorrect.');
-                return;
-            }
+            await this.git.fetch();
             await this.pull();
+            if (!status.isClean()) {
+                const res = await this.git
+                    .add('./*')
+                    .commit(new Date().toUTCString())
+                    .push('origin', status.current ?? 'main');
+                new Notice(`GitHub Sync: pushed ${res.pushed}`);
+            }
         } catch (e) {
             new Notice('GitHub Sync: ' + e.message);
             console.error(e);
@@ -33,11 +35,12 @@ export default class SyncViaGithub extends Plugin {
     async onload() {
         await this.loadSettings();
         this.initGit();
-        await this.updateStatusBar();
-        
+
         this.addSettingTab(new SampleSettingTab(this.app, this));
         this.ribbonIcon = this.addRibbonIcon('github', 'Github Sync', this.onGithubIconClick);
+
         this.statusBar = this.addStatusBarItem();
+        await this.updateStatusBar();
         this.registerInterval(window.setInterval(this.updateStatusBar, 1000 * 60));
     }
 
@@ -69,5 +72,13 @@ export default class SyncViaGithub extends Plugin {
         const update = await this.git.pull('origin', 'main', { '--no-rebase': null });
         new Notice(`GitHub Sync: pulled ${update.summary.changes} changes`);
         return update;
+    }
+
+    async getStatus() {
+        try {
+            return await this.git.status();
+        } catch (e) {
+            return await this.git.init().status();
+        }
     }
 }
