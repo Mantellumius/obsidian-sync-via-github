@@ -37,7 +37,7 @@ export default class SyncViaGithub extends Plugin {
                 this.ribbonIcon.addClass('not-synced');
             else
                 this.ribbonIcon.removeClass('not-synced');
-        }, 1000));
+        }, 60 * 1000));
     }
 
     onunload() {
