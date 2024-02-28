@@ -1,8 +1,8 @@
 import { Notice, Plugin } from 'obsidian';
-import { GithubSyncMySettings, SampleSettingTab } from 'src/settings';
+import { SampleSettingTab, SyncViaGithubSettings } from 'src/settings';
 
-export default class GithubSyncMy extends Plugin {
-	settings: GithubSyncMySettings;
+export default class SyncViaGithub extends Plugin {
+	settings: SyncViaGithubSettings;
 	ribbonIcon: HTMLElement;
 
 	async onload() {
@@ -27,7 +27,7 @@ export default class GithubSyncMy extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign(new GithubSyncMySettings(), await this.loadData());
+		this.settings = Object.assign(new SyncViaGithubSettings(), await this.loadData());
 	}
 
 	saveSettings() {

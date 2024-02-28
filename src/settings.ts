@@ -1,17 +1,17 @@
-import GithubSyncMy from "main";
+import SyncViaGithub from "main";
 import { App, PluginSettingTab, Setting } from "obsidian";
 import { wrapTypePassword } from "./utils/wrapTypePassword";
 
-export class GithubSyncMySettings {
+export class SyncViaGithubSettings {
 	repositoryName = '';
 	username = '';
 	accessToken = '';
 }
 
 export class SampleSettingTab extends PluginSettingTab {
-	plugin: GithubSyncMy;
+	plugin: SyncViaGithub;
 
-	constructor(app: App, plugin: GithubSyncMy) {
+	constructor(app: App, plugin: SyncViaGithub) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
