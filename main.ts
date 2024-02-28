@@ -1,4 +1,4 @@
-import { FileSystemAdapter, Plugin } from 'obsidian';
+import { FileSystemAdapter, Notice, Plugin } from 'obsidian';
 import simpleGit, { SimpleGit } from 'simple-git';
 import { SampleSettingTab, SyncViaGithubSettings } from 'src/settings';
 
@@ -9,13 +9,28 @@ export default class SyncViaGithub extends Plugin {
 
 
 	onGithubIconClick = async (event: MouseEvent) => {
-		console.log(await this.git.branch());
+		try {
+			await this.git.status();
+			await this.configureRemote();
+			console.log(await this.git.listRemote())
+			try {
+				await this.git.fetch();
+			} catch (e) {
+				new Notice(e + "\nGitHub Sync: Invalid remote URL. Username, PAT, or Repo URL might be incorrect.");
+				return;
+			}
+			await this.pull();
+		} catch (e) {
+			new Notice("GitHub Sync: " + e.message);
+			console.error(e);
+		}
 	}
 
 	async onload() {
 		await this.loadSettings();
+		await this.initGit();
+
 		this.addSettingTab(new SampleSettingTab(this.app, this));
-		this.initGit();
 		this.ribbonIcon = this.addRibbonIcon('github', 'Github Sync', this.onGithubIconClick);
 		this.registerInterval(window.setInterval(() => {
 			const commitsBehind = 1;
@@ -39,7 +54,7 @@ export default class SyncViaGithub extends Plugin {
 		return this.saveData(this.settings);
 	}
 
-	initGit() {
+	async initGit() {
 		this.git = simpleGit({
 			baseDir: (this.app.vault.adapter as FileSystemAdapter).getBasePath(),
 			binary: 'git',
@@ -49,5 +64,17 @@ export default class SyncViaGithub extends Plugin {
 			maxConcurrentProcesses: 5,
 			trimmed: false,
 		});
+	}
+
+	async configureRemote() {
+		await this.git.removeRemote('origin');
+		await this.git.addRemote('origin', this.settings.remote);
+		console.log(this.settings.remote);
+	}
+
+	async pull() {
+		const update = await this.git.pull('origin', 'main', { '--no-rebase': null });
+		new Notice("GitHub Sync: Pulled " + update.summary.changes + " changes");
+		return update;
 	}
 }

@@ -6,6 +6,10 @@ export class SyncViaGithubSettings {
 	repositoryName = '';
 	username = '';
 	accessToken = '';
+	
+	get remote() {
+		return `https://${this.username}:${this.accessToken}@github.com/${this.username}/${this.repositoryName}`
+	}
 }
 
 export class SampleSettingTab extends PluginSettingTab {
