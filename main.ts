@@ -67,7 +67,7 @@ export default class SyncViaGithub extends Plugin {
 
     async pull() {
         const update = await this.git.pull('origin', 'main', { '--no-rebase': null });
-        new Notice('GitHub Sync: Pulled ' + update.summary.changes + ' changes');
+        new Notice(`GitHub Sync: pulled ${update.summary.changes} changes`);
         return update;
     }
 }
