@@ -1,8 +1,18 @@
-/*
+.not-synced {
+	position: relative;
+	opacity: 1;
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
-
-If your plugin does not need CSS, delete this file.
-
-*/
+.not-synced::after {
+	content: attr(data-commits-behind);
+	position: absolute;
+	top: 0;
+	right: 0;
+	border-radius: 50%;
+	border: 1px solid var(--color-orange);
+	width: 10px;
+	height: 10px;
+	font-size: 8px;
+	text-align: center;
+	color: var(--icon-color);
+}
