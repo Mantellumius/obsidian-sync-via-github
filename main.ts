@@ -19,21 +19,19 @@ export default class SyncViaGithub extends Plugin {
     };
 
     updateStatusBarRemote = async () => {
-        const status = await this.git.fetch().status();
+        const status = await this.fetchStatus();
         this.statusBar.update(status.files.length, status.behind);
     };
 
     async onload() {
-        this.initGit();
         await this.loadSettings();
+        await this.initGit();
         await this.initUI();
     }
 
     async positiveSync() {
         try {
             const status = await this.getStatus();
-            await this.configureRemote();
-            await this.git.fetch();
             await this.pull();
             if (!status.isClean()) {
                 const res = await this.git
@@ -55,7 +53,8 @@ export default class SyncViaGithub extends Plugin {
     }
 
     saveSettings() {
-        return this.saveData(this.settings);
+        return this.saveData(this.settings)
+            .then(this.initGit);
     }
 
     async initUI() {
@@ -67,18 +66,33 @@ export default class SyncViaGithub extends Plugin {
         this.registerInterval(window.setInterval(this.updateStatusBarRemote, 1000 * 10));
     }
 
-    initGit() {
+    async initGit() {
         this.git = simpleGit({
             baseDir: (this.app.vault.adapter as FileSystemAdapter).getBasePath(),
             binary: 'git',
             maxConcurrentProcesses: 5,
             trimmed: false,
         });
+        try {
+            await this.configureRemote();
+            const status = await this.git.status();
+            await this.git.branch({ '--set-upstream-to': 'origin/' + status.current });
+        } catch (e) { /* empty */ }
     }
 
     async configureRemote() {
-        await this.git.removeRemote('origin');
-        await this.git.addRemote('origin', this.settings.remote);
+        try {
+            await this.git.removeRemote('origin');
+        } catch (e) {
+            new Notice('GitHub Sync: ' + e.message);
+        } finally {
+            await this.git.addRemote('origin', this.settings.remote)
+                .catch((e) => new Notice(e.message));
+        }
+    }
+
+    async fetchStatus() {
+        return this.git.fetch('origin', 'main').status();
     }
 
     async pull() {
