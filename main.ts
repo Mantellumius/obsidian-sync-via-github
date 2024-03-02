@@ -15,12 +15,11 @@ export default class SyncViaGithub extends Plugin {
 
     updateStatusBarLocal = async () => {
         const status = await this.git.status();
-        this.statusBar.updateChanges(status.files.length);
+        this.statusBar.update(status.files.length);
     };
 
     updateStatusBarRemote = async () => {
-        const status = await this.fetchStatus();
-        this.statusBar.update(status.files.length, status.behind);
+        await this.pull();
     };
 
     async onload() {
@@ -97,7 +96,8 @@ export default class SyncViaGithub extends Plugin {
 
     async pull() {
         const update = await this.git.pull('origin', 'main', { '--no-rebase': null });
-        new Notice(`GitHub Sync: pulled ${update.summary.changes} changes`);
+        if (update.summary.changes > 0)
+            new Notice(`GitHub Sync: pulled ${update.summary.changes} changes`);
         return update;
     }
 
