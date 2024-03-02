@@ -18,7 +18,7 @@ export default class SyncViaGithub extends Plugin {
         this.statusBar.update(status.files.length);
     };
 
-    updateStatusBarRemote = async () => {
+    autoPulling = async () => {
         await this.pull();
     };
 
@@ -60,9 +60,9 @@ export default class SyncViaGithub extends Plugin {
         this.addSettingTab(new SampleSettingTab(this.app, this));
         this.ribbonIcon = this.addRibbonIcon('github', 'Github Sync', this.onGithubIconClick);
         this.statusBar = new StatusBar(this.addStatusBarItem());
-        await this.updateStatusBarRemote();
         this.registerInterval(window.setInterval(this.updateStatusBarLocal, 1000));
-        this.registerInterval(window.setInterval(this.updateStatusBarRemote, 1000 * 10));
+        if (this.settings.autoPulling === 'true')
+            this.registerInterval(window.setInterval(this.autoPulling, 1000 * 10));
     }
 
     async initGit() {

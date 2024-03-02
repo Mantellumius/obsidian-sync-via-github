@@ -6,6 +6,7 @@ export class SyncViaGithubSettings {
     repositoryName = '';
     username = '';
     accessToken = '';
+    autoPulling = 'false';
 
     get remote() {
         return `https://${this.username}:${this.accessToken}@github.com/${this.username}/${this.repositoryName}`;
@@ -51,6 +52,15 @@ export class SampleSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.accessToken)
                 .onChange(async (value) => {
                     this.plugin.settings.accessToken = value;
+                    await this.plugin.saveSettings();
+                }));
+        new Setting(containerEl)
+            .setName('Auto pulling')
+            .addText(text => text
+                .setPlaceholder('true or false')
+                .setValue(this.plugin.settings.autoPulling)
+                .onChange(async (value) => {
+                    this.plugin.settings.autoPulling = value;
                     await this.plugin.saveSettings();
                 }));
     }
