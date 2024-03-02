@@ -1,5 +1,6 @@
 {
-	"id": "sync-via-github",
+    "manifest_version": 3,
+    "id": "sync-via-github",
 	"name": "Sync via Github",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
