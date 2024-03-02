@@ -1,14 +1,35 @@
 import { FileSystemAdapter, Notice, Plugin } from 'obsidian';
 import simpleGit, { SimpleGit } from 'simple-git';
+import StatusBar from 'src/components/StatusBar';
 import { SampleSettingTab, SyncViaGithubSettings } from 'src/settings';
 
 export default class SyncViaGithub extends Plugin {
     settings: SyncViaGithubSettings;
     ribbonIcon: HTMLElement;
-    statusBar: HTMLElement;
+    statusBar: StatusBar;
     git: SimpleGit;
 
     onGithubIconClick = async (event: MouseEvent) => {
+        await this.positiveSync();
+    };
+
+    updateStatusBarLocal = async () => {
+        const status = await this.git.status();
+        this.statusBar.updateChanges(status.files.length);
+    };
+
+    updateStatusBarRemote = async () => {
+        const status = await this.git.fetch().status();
+        this.statusBar.update(status.files.length, status.behind);
+    };
+
+    async onload() {
+        this.initGit();
+        await this.loadSettings();
+        await this.initUI();
+    }
+
+    async positiveSync() {
         try {
             const status = await this.getStatus();
             await this.configureRemote();
@@ -25,23 +46,6 @@ export default class SyncViaGithub extends Plugin {
             new Notice('GitHub Sync: ' + e.message);
             console.error(e);
         }
-    };
-
-    updateStatusBar = async () => {
-        const status = await this.git.fetch().status();
-        this.statusBar.setText(`Changes: ${status.not_added.length} ${status.behind > 0 ? 'Commits behind' + status.behind : ''}`);
-    };
-
-    async onload() {
-        await this.loadSettings();
-        this.initGit();
-
-        this.addSettingTab(new SampleSettingTab(this.app, this));
-        this.ribbonIcon = this.addRibbonIcon('github', 'Github Sync', this.onGithubIconClick);
-
-        this.statusBar = this.addStatusBarItem();
-        await this.updateStatusBar();
-        this.registerInterval(window.setInterval(this.updateStatusBar, 1000 * 60));
     }
 
     onunload() { }
@@ -52,6 +56,15 @@ export default class SyncViaGithub extends Plugin {
 
     saveSettings() {
         return this.saveData(this.settings);
+    }
+
+    async initUI() {
+        this.addSettingTab(new SampleSettingTab(this.app, this));
+        this.ribbonIcon = this.addRibbonIcon('github', 'Github Sync', this.onGithubIconClick);
+        this.statusBar = new StatusBar(this.addStatusBarItem());
+        await this.updateStatusBarRemote();
+        this.registerInterval(window.setInterval(this.updateStatusBarLocal, 1000));
+        this.registerInterval(window.setInterval(this.updateStatusBarRemote, 1000 * 10));
     }
 
     initGit() {
